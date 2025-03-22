@@ -2,14 +2,9 @@ import numpy
 import numpy as np
 from linearwavetheory.settings import _GRAV
 import linearwavetheory.stokes_theory.regular_waves as stokes
-import scipy
 import matplotlib.pyplot as plt
-import os
-from linearwavetheory.settings import stokes_theory_options
-from integrate import integrate_stokes_solution, get_numerical_setup_stokes,get_numerical_amplitudes
-from lagrangian_material_surface_coef import a40,a42,a44
-from lagrangian_horizontal_coef import an_stokes_drift, x42, x44
-from lagrangian_horizontal_coef_order3 import nx31,nx33
+from integrate import get_numerical_amplitudes
+
 
 
 params = {
@@ -27,7 +22,7 @@ params = {
 }
 
 plt.rcParams.update(params)
-_nonlinear_options = stokes_theory_options(reference_frame="lagrangian")
+
 
 
 def plot_amplitudes():
