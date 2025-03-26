@@ -24,11 +24,12 @@ def integrate_stokes_solution(steepness, frequency, relative_depth, number_of_wa
 
     relative_timestep = kwargs.get('relative_dt', 0.01)
     cache = kwargs.get('cache',True)
+    force_recompute = kwargs.get('force_recompute', False)
     filename = f'solution_{steepness}+{frequency}+{relative_depth}+{number_of_waves}+{relative_z}+{relative_timestep}.npz'
     filename= kwargs.get('filename',filename)
     filename = f'./data/{filename}'
 
-    if os.path.exists(filename) and cache:
+    if os.path.exists(filename) and cache and not force_recompute:
         data = np.load(filename)
         time = data['time']
         eta = data['eta']
@@ -64,13 +65,21 @@ def integrate_stokes_solution(steepness, frequency, relative_depth, number_of_wa
 
         return np.array( [u,w] )
 
-
-    initial_condition = np.array(
-        [
-            0.0,
-            stokes.material_surface_vertical_elevation(steepness,wavenumber,depth,0,0,z,order=4)[0]
-        ]
-    )
+    if relative_z < 0:
+        initial_condition = np.array(
+            [
+                0.0,
+                stokes.material_surface_vertical_elevation(steepness,wavenumber,depth,0,0,z,order=4)[0]
+            ]
+        )
+    else:
+        print('ja')
+        initial_condition = np.array(
+            [
+                0.0,
+                stokes.free_surface_elevation(steepness,wavenumber,depth,0,0,order=5)[0]
+            ]
+        )
 
     if initial_condition[1]*wavenumber > steepness*2:
         raise ValueError('Initial condition is not correct')
@@ -109,7 +118,7 @@ def integrate_stokes_solution(steepness, frequency, relative_depth, number_of_wa
     return time, eta, xl, us,x
 
 
-def get_numerical_amplitudes(generalized_ursell, relative_z):
+def get_numerical_amplitudes(generalized_ursell, relative_z,force_recompute=False):
     frequency = 0.1
     mu = [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,0.9999]
 
@@ -124,7 +133,7 @@ def get_numerical_amplitudes(generalized_ursell, relative_z):
     stokes_drift = numpy.zeros(len(kds))
 
     filename = f'./data/amplitudes_{generalized_ursell:0.2f}+{frequency:0.2f}+{relative_z:0.2f}.npz'
-    if os.path.exists(filename):
+    if os.path.exists(filename) and not force_recompute:
         data = np.load(filename)
         kds = data['kds']
         vertical =data['vertical']
@@ -140,16 +149,17 @@ def get_numerical_amplitudes(generalized_ursell, relative_z):
         depth = kd / wavenumber
 
         nonlinear_frequency = (
-            nonlinear_dispersion_relation(steepness,wavenumber,depth,relative_z / wavenumber)/2/np.pi
+            nonlinear_dispersion_relation(steepness[i],wavenumber,depth,relative_z / wavenumber,reference_frame='lagrangian')/2/np.pi
         )
 
         c = angular_frequency / wavenumber
         try:
             time, numerical_eta, numerical_x, us,_ = integrate_stokes_solution(
-                steepness[i], frequency, kd, number_of_waves=100, relative_z=relative_z
+                steepness[i], frequency, kd, number_of_waves=1000, relative_z=relative_z, force_recompute=force_recompute
             )
             vertical[i,:] = get_amplitudes(
                 time, numerical_eta, relative_z, wavenumber, nonlinear_frequency, 'real')
+
 
             horizontal[i,:] = get_amplitudes(
                 time, numerical_x, 0, wavenumber, nonlinear_frequency,'imag')
