@@ -1,7 +1,4 @@
 numpy
 scipy
-numba
-numba-progress
-pandas
 matplotlib
-xarray
+linearwavetheory

@@ -2,72 +2,54 @@ import numpy
 import numpy as np
 from linearwavetheory.settings import _GRAV
 import linearwavetheory.stokes_theory.regular_waves as stokes
+from linearwavetheory.stokes_theory.regular_waves.nonlinear_dispersion import nonlinear_dispersion_relation
 import scipy
-import matplotlib.pyplot as plt
 import os
-from linearwavetheory.settings import stokes_theory_options
-
 from scipy.signal import argrelextrema
 
 
+def integrate_stokes_solution(steepness, frequency, relative_depth, number_of_waves=1, relative_z=0, **kwargs):
+    """
+    Integrate the Stokes solution for a given steepness, frequency, and relative depth. The function caches results
+    by default to avoid recomputing the solution for the same parameters. The solution is saved in a .npz file.
 
-
-
-
-
-
-params = {
-    "axes.labelsize": 12,
-    "axes.labelcolor": "grey",
-    "font.size": 12,
-    "legend.fontsize": 12,
-    "xtick.labelsize": 10,
-    "xtick.color": "grey",
-    "ytick.color": "grey",
-    "ytick.labelsize": 10,
-    "text.usetex": False,
-    "font.family": "sans-serif",
-    "axes.grid": False,
-}
-
-plt.rcParams.update(params)
-_nonlinear_options = stokes_theory_options(reference_frame="lagrangian")
-
-def integrate_stokes_solution( steepness , frequency, kd, number_of_waves=1, height=0, **kwargs):
-
-    if 'relative_dt' in kwargs:
-        relative_timestep = kwargs.get('relative_dt', 0.01)
-        filename = f'./data/b{steepness}+{frequency}+{kd}+{number_of_waves}+{height}+{relative_timestep}.npz'
-    else:
-        filename = f'./data/{steepness}+{frequency}+{kd}+{number_of_waves}+{height}.npz'
+    :param steepness:
+    :param frequency:
+    :param relative_depth: relative depth of the wave (kd)
+    :param number_of_waves: number of waves to compute the solution for. (approximate)
+    :param relative_z: relative height where we want to compute the solution (kz)
+    :param kwargs:
+    :return:
+    """
 
     relative_timestep = kwargs.get('relative_dt', 0.01)
-
     cache = kwargs.get('cache',True)
+    force_recompute = kwargs.get('force_recompute', False)
+    filename = f'solution_{steepness}+{frequency}+{relative_depth}+{number_of_waves}+{relative_z}+{relative_timestep}.npz'
+    filename= kwargs.get('filename',filename)
+    filename = f'./data/{filename}'
 
-    try:
-        if os.path.exists(filename) and cache:
-            data = np.load(filename)
-            time = data['time']
-            eta = data['eta']
-            xl = data['xl']
-            us = data['us']
-            x = data['x']
+    if os.path.exists(filename) and cache and not force_recompute:
+        data = np.load(filename)
+        time = data['time']
+        eta = data['eta']
+        xl = data['xl']
+        us = data['us']
+        x = data['x']
 
-            return time, eta, xl, us, x
-    except KeyError:
-        pass
+        return time, eta, xl, us, x
 
-    mu = np.tanh(kd)
+    # Calculate the wavenumber/depth associated with the given frequency and relative depth
+    mu = np.tanh(relative_depth)
     angular_frequency = 2 * np.pi * frequency
     wavenumber = angular_frequency**2 / _GRAV / mu
-    depth = kd / wavenumber
+    depth = relative_depth / wavenumber
+    z = relative_z / wavenumber
 
-    nonlinear_frequency = stokes.dimensionless_nonlinear_dispersion_relation(
-        steepness, wavenumber*depth,nonlinear_options=_nonlinear_options) * frequency
+    nonlinear_frequency = nonlinear_dispersion_relation(
+        steepness, wavenumber,depth,z,'lagrangian') / np.pi/2
 
     # Determine the time step
-    relative_timestep = kwargs.get('relative_dt',0.01)
     absolute_timestep = relative_timestep / nonlinear_frequency
 
     # Create the time vector
@@ -83,15 +65,17 @@ def integrate_stokes_solution( steepness , frequency, kd, number_of_waves=1, hei
 
         return np.array( [u,w] )
 
-    if height < 0:
+    if relative_z < 0:
         initial_condition = np.array(
             [
                 0.0,
-                stokes.material_surface_vertical_elevation(steepness,wavenumber,depth,0,0,height,order=5)[0]
+                stokes.material_surface_vertical_elevation(steepness,wavenumber,depth,0,0,z,order=4)[0]
             ]
         )
     else:
-        print('ja')
+        # At the surface we can use a 5th order approximation - this helps in particular getting the 4th order setup
+        # correct - which otherwise is really finicky if otherwise a 5th order velocity field is used.
+        # (try setting order=4 and see what happens). Note that the other orders are not as sensitive to this.
         initial_condition = np.array(
             [
                 0.0,
@@ -99,87 +83,47 @@ def integrate_stokes_solution( steepness , frequency, kd, number_of_waves=1, hei
             ]
         )
 
-        if initial_condition[1]*wavenumber > steepness*2:
-            raise ValueError('Initial condition is not correct')
+    if initial_condition[1]*wavenumber > steepness*2:
+        raise ValueError('Initial condition is not correct')
 
     sol = scipy.integrate.solve_ivp(
         fun=differential_equation,
         t_span=[0,time[-1]],
         y0=initial_condition,
         t_eval=time,
-        max_step=absolute_timestep
+        max_step=absolute_timestep[0]
     )
 
     x = sol.y[0,:]
     eta = sol.y[1,:]
-    t= time
     time = sol.t
 
+    # We try to only get a whole number of waves- since we start at an extrema of elevation, we merely need to
+    # find the last extrema of the elevation signal to get a whole number of waves.
     jj = argrelextrema(eta, np.greater)[0]
 
     eta = eta[0:jj[-1]]
     x = x[0:jj[-1]]
     time = time[0:jj[-1]]
 
+    # Stokes drift is defined as the average horizontal velocity over one wave period. Approximating it from the
+    # mean horizontal location as done here proved to be numerically the most stable.
     us = 2 * np.mean(x) / (time[-1] - time[0])
+
+    # Lagrangian displacement is merely the horizontal location minus the stokes drift times time
     xl = x - us * time
 
-    # xl = scipy.signal.detrend(x)
-    #
-    # xl = xl + x[1] - xl[1]
-    #
-    # xlm = x - xl
-    # us = (xlm[-1]-xlm[0]) / (time[-1] - time[0])
-
+    # Save the results to a .npz file for later use
     os.makedirs('./data',exist_ok=True)
     np.savez( filename , time=time, eta=eta, xl=xl, us=us,x=x)
 
     return time, eta, xl, us,x
 
-def get_numerical_setup_stokes(steepness, height):
-    frequency = 0.1
-    kds = np.array([0.5,0.6,0.7,0.8,0.9,1,1.2,1.4,1.6,1.8,2,2.5,3,3.5,4,4.5,5])
-    nkd = len(kds)
 
-    stokes_numerical = numpy.zeros_like(kds)
-    setup_numerical = numpy.zeros_like(kds)
-
-    filename = f'./data/setup_stokes_{nkd}_{steepness}+{frequency}+{height}.npz'
-    if os.path.exists(filename):
-        data = np.load(filename)
-        kds = data['kds']
-        stokes_numerical =data['stokes_numerical']
-        setup_numerical = data['setup_numerical']
-        return kds, stokes_numerical, setup_numerical
-
-    for i, kd in enumerate(kds):
-
-        mu = numpy.tanh(kd)
-        angular_frequency = 2 * numpy.pi * frequency
-        wavenumber = angular_frequency**2 / _GRAV / mu
-
-        c = angular_frequency / wavenumber
-        try:
-            time, numerical_eta, numerical_x, us = integrate_stokes_solution(
-                steepness, frequency, kd, number_of_waves=100, height=height/wavenumber
-            )
-            setup_numerical[i] = np.mean(numerical_eta) * wavenumber
-            stokes_numerical[i] = us / c
-        except ValueError:
-            stokes_numerical[i] = np.nan
-            setup_numerical[i] = np.nan
-
-    os.makedirs('./data',exist_ok=True)
-    np.savez(filename, kds=kds, stokes_numerical=stokes_numerical, setup_numerical=setup_numerical)
-
-    return kds, stokes_numerical, setup_numerical
-
-
-def get_numerical_amplitudes(generalized_ursell, dimensionless_height):
+def get_numerical_amplitudes(generalized_ursell, relative_z,force_recompute=False):
     frequency = 0.1
     mu = [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,0.9999]
 
-    #kds = np.array([0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1,1.2,1.4,1.6,1.8,2,2.5,3,3.5,4,4.5,5])
     kds = np.atanh(mu)
     nkd = len(kds)
 
@@ -190,8 +134,8 @@ def get_numerical_amplitudes(generalized_ursell, dimensionless_height):
     horizontal = numpy.zeros((len(kds), 6))
     stokes_drift = numpy.zeros(len(kds))
 
-    filename = f'./data/amplitudes_ursell_combined_{nkd}_{generalized_ursell}+{frequency}+{dimensionless_height}.npz'
-    if os.path.exists(filename):
+    filename = f'./data/amplitudes_{generalized_ursell:0.2f}+{frequency:0.2f}+{relative_z:0.2f}.npz'
+    if os.path.exists(filename) and not force_recompute:
         data = np.load(filename)
         kds = data['kds']
         vertical =data['vertical']
@@ -204,17 +148,20 @@ def get_numerical_amplitudes(generalized_ursell, dimensionless_height):
         mu = numpy.tanh(kd)
         angular_frequency = 2 * numpy.pi * frequency
         wavenumber = angular_frequency**2 / _GRAV / mu
+        depth = kd / wavenumber
 
-        nonlinear_frequency = stokes.dimensionless_nonlinear_dispersion_relation(
-            steepness[i], kd, nonlinear_options=_nonlinear_options) * frequency
+        nonlinear_frequency = (
+            nonlinear_dispersion_relation(steepness[i],wavenumber,depth,relative_z / wavenumber,reference_frame='lagrangian')/2/np.pi
+        )
 
         c = angular_frequency / wavenumber
         try:
             time, numerical_eta, numerical_x, us,_ = integrate_stokes_solution(
-                steepness[i], frequency, kd, number_of_waves=100, height=dimensionless_height/wavenumber
+                steepness[i], frequency, kd, number_of_waves=100, relative_z=relative_z, force_recompute=force_recompute
             )
             vertical[i,:] = get_amplitudes(
-                time, numerical_eta, dimensionless_height, wavenumber, nonlinear_frequency,'real')
+                time, numerical_eta, relative_z, wavenumber, nonlinear_frequency, 'real')
+
 
             horizontal[i,:] = get_amplitudes(
                 time, numerical_x, 0, wavenumber, nonlinear_frequency,'imag')
@@ -253,7 +200,6 @@ def get_amplitudes(time, signal,offset,scaling,nonlinear_frequency,sign='real'):
     else:
         _signs = np.sign(np.imag(_fft))
     _fft = 2 * np.abs(_fft) / N * 10
-    # plot_amp(steepness,nonlinear_frequency,freq,_fft)
 
     out = np.zeros(6)
     for jj in range(6):
@@ -271,17 +217,5 @@ def get_amplitudes(time, signal,offset,scaling,nonlinear_frequency,sign='real'):
 
         out[jj] = _fft[jjf] * fac * _signs[jjf]
     return out
-
-
-def plot_amp(steepness,nonlinear_freq,freq,_fft):
-    N = len(freq)
-    plt.plot(freq/nonlinear_freq,_fft,'o')
-
-    for jj in range(5):
-        plt.axvline(jj,linestyle='--',color='grey')
-
-    plt.xlim([0,6])
-    plt.grid()
-    plt.show()
 
 
