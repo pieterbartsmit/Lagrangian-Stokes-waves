@@ -73,7 +73,9 @@ def integrate_stokes_solution(steepness, frequency, relative_depth, number_of_wa
             ]
         )
     else:
-        print('ja')
+        # At the surface we can use a 5th order approximation - this helps in particular getting the 4th order setup
+        # correct - which otherwise is really finicky if otherwise a 5th order velocity field is used.
+        # (try setting order=4 and see what happens). Note that the other orders are not as sensitive to this.
         initial_condition = np.array(
             [
                 0.0,
@@ -155,7 +157,7 @@ def get_numerical_amplitudes(generalized_ursell, relative_z,force_recompute=Fals
         c = angular_frequency / wavenumber
         try:
             time, numerical_eta, numerical_x, us,_ = integrate_stokes_solution(
-                steepness[i], frequency, kd, number_of_waves=1000, relative_z=relative_z, force_recompute=force_recompute
+                steepness[i], frequency, kd, number_of_waves=100, relative_z=relative_z, force_recompute=force_recompute
             )
             vertical[i,:] = get_amplitudes(
                 time, numerical_eta, relative_z, wavenumber, nonlinear_frequency, 'real')

@@ -1,22 +1,18 @@
 import numpy
 import numpy as np
-from linearwavetheory.settings import _GRAV
 import linearwavetheory.stokes_theory.regular_waves.lagrangian_displacement_amplitudes as lda
 import matplotlib.pyplot as plt
 import os
 from integrate import get_numerical_amplitudes
 import figure_params
 
-
 def plot_amplitude(generalized_ursell):
     relative_z = 0
     kds, num_ver,num_hor,us = get_numerical_amplitudes(generalized_ursell, relative_z)
     num_hor[:,0] = us
 
-    frequency = 0.1
     mu = numpy.tanh(kds)
     epsilon = generalized_ursell * mu ** 3
-    angular_frequency = 2 * numpy.pi * frequency
 
     eta20 = lda.eta20(kds,relative_z) * epsilon**2
     eta40 = lda.eta40(kds,relative_z) * epsilon**4
@@ -113,7 +109,6 @@ def plot_amplitude(generalized_ursell):
         jj=jj+1
         plt.xticks([0.1,0.4,0.7,1])
         plt.xlim([0.1,1])
-
 
 
 if __name__ == '__main__':
