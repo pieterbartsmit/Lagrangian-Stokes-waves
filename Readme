@@ -27,6 +27,10 @@ A pre-print of the paper may be found at:
 
     TBD
 
-To reproduce the figures simply run the corresponding scripts. The figures will be generated in the `./figures' folder.
-The data folder contains the raw data needed to reproduce the figures. The algorithms to estimate Lagrangian properties
-are implemented in the `linearwavetheory` package on pypi. For details on methodology we refer to the paper.
+
+-- Installation and Usage --
+
+    To reproduce the figures, install the packages in the requirements.txt into your local environment andrun the
+    corresponding scripts. The figures will be generated in the `./figures' folder. The algorithms to estimate
+    Lagrangian properties are implemented in the `linearwavetheory` package on pypi. For details on methodology we refer
+    to the paper.
