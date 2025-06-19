@@ -1,3 +1,7 @@
+"""
+Script to generate Figure 3 of the paper "Lagrangian Surface Properties in Regular Stokes Waves".
+"""
+
 import numpy as np
 from linearwavetheory.stokes_theory.regular_waves.mean_properties import dimensionless_variance, dimensionless_skewness, dimensionless_kurtosis
 import matplotlib.pyplot as plt
@@ -180,5 +184,5 @@ if __name__ == "__main__":
     plot_kurtosis(ax[1,1])
     fig.tight_layout()
     os.makedirs('./figures',exist_ok=True)
-    fig.savefig('./figures/figure_statistics.png')
+    fig.savefig('./figures/figure03.png')
     plt.show()

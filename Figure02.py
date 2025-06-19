@@ -1,7 +1,10 @@
+"""
+Script to generate Figure 2 of the paper "Lagrangian Surface Properties in Regular Stokes Waves".
+"""
+
 import numpy as np
 from linearwavetheory.settings import _GRAV
 import linearwavetheory.stokes_theory.regular_waves as stokes
-from linearwavetheory.stokes_theory.regular_waves.nonlinear_dispersion import nonlinear_dispersion_relation
 import matplotlib.pyplot as plt
 import integrate
 from linearwavetheory.stokes_theory.regular_waves.settings import ReferenceFrame
@@ -133,5 +136,5 @@ def plot_orbitals():
 if __name__ == '__main__':
     fig = plot_orbitals()
     os.makedirs('./figures', exist_ok=True)
-    fig.savefig('./figures/figure_orbitals.png')
+    fig.savefig('./figures/figure02.png')
     plt.show()

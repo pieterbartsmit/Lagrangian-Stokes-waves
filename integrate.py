@@ -1,3 +1,7 @@
+"""
+Functions to estimate Lagrangian drift from numerical integration of the Stokes solution.
+"""
+
 import numpy
 import numpy as np
 from linearwavetheory.settings import _GRAV
@@ -151,7 +155,8 @@ def get_numerical_amplitudes(generalized_ursell, relative_z,force_recompute=Fals
         depth = kd / wavenumber
 
         nonlinear_frequency = (
-            nonlinear_dispersion_relation(steepness[i],wavenumber,depth,relative_z / wavenumber,reference_frame='lagrangian')/2/np.pi
+            nonlinear_dispersion_relation(steepness[i],wavenumber,depth,relative_z / wavenumber,
+                                          reference_frame='lagrangian')/2/np.pi
         )
 
         c = angular_frequency / wavenumber

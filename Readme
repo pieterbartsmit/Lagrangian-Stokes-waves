@@ -1,0 +1,32 @@
+This repository contains the code to regenerate the figures in the paper:
+
+    "Lagrangian Surface Properties in Regular Stokes Waves",
+
+By
+
+    Smit, Pieter B., Houghton, Isabel A. 2025
+
+Abstract:
+
+    Drifting wave buoys are one of the primary methods to observe wave properties such as wave height and variance
+    (energy). However, because of the Lagrangian motion of buoys, the observed profile and mean properties differ from
+    comparable Eulerian estimates. Here we derive fourth-order accurate perturbation solutions to the Lagrangian
+    displacements and consider if and when such non-linear effects may become important. Considering solutions valid
+    from deep to intermediate water, we derive explicit 4th-order expressions for particle motion (including Stokes
+    drift and Lagrangian setup) valid throughout the water column and validate results with numerical integration of
+    the base theory. We discuss implications with respect to surface motion and find that while wave height is
+    invariant, variance, skewness and kurtosis generally are not. In the case of low-steepness and finite Ursell number
+    higher-order corrections, this difference can represent a significant fraction (20-40\% for Stokes drift or
+    variance) or even dominate (\>100\% for skewness and kurtosis) the leading-order estimate in cases when the theory
+    formally still applies (Ursell number <0.4). While these estimations likely will not precisely correspond to real
+    world conditions due to missing key physical factors such as depth variability, amplitude modulation, and
+    directionality, they highlight the need for caution when interpreting drifter data in intermediate to shallow waters
+    - even beyond the surf zone.
+
+A pre-print of the paper may be found at:
+
+    TBD
+
+To reproduce the figures simply run the corresponding scripts. The figures will be generated in the `./figures' folder.
+The data folder contains the raw data needed to reproduce the figures. The algorithms to estimate Lagrangian properties
+are implemented in the `linearwavetheory` package on pypi. For details on methodology we refer to the paper.

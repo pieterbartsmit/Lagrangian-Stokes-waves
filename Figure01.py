@@ -1,3 +1,8 @@
+"""
+Script to generate Figure 1 of the paper "Lagrangian Surface Properties in Regular Stokes Waves".
+"""
+
+
 import numpy
 import numpy as np
 import linearwavetheory.stokes_theory.regular_waves.lagrangian_displacement_amplitudes as lda
@@ -118,5 +123,5 @@ if __name__ == '__main__':
     plt.tight_layout()
 
     os.makedirs('./figures',exist_ok=True)
-    fig.savefig('./figures/figure_amplitude_validation.png')
+    fig.savefig('./figures/figure01.png')
     plt.show()
