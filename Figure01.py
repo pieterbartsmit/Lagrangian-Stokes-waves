@@ -50,6 +50,7 @@ def plot_amplitude(generalized_ursell):
 
     lab = [None,'n=1','n=2','n=3','n=4']
     colors = ['k','k','k','r','r']
+    panels = ['a','b','c','d','e','f']
 
     scale = np.array([epsilon0**4,epsilon0**3,epsilon0**4,epsilon0**3,epsilon0**4,epsilon0**5])
     kds = np.tanh(kds)
@@ -63,9 +64,11 @@ def plot_amplitude(generalized_ursell):
 
         color = colors[jj]
 
+
         plt.subplot(2, 3, panel[jj])
         plt.plot(kds, num_ver_amp / ver_scale, color, linestyle='--', marker='x')
         plt.plot(kds, an_ver_amp / ver_scale, color,label=lab[jj])
+        plt.title(f'({panels[panel[jj] - 1]})')
 
         if jj == 0:
             plt.ylabel('$\\eta_l^{(4,0)} \\mu^{7}$')
@@ -109,11 +112,13 @@ def plot_amplitude(generalized_ursell):
             plt.yticks([-0.4, -0.2, 0., 0.2])
             #plt.ylim([-0.4, 0.2])
 
+        plt.title(f'({panels[panel[jj]+2]})')
         plt.xlabel('$\\mu$')
         plt.grid(True)
         jj=jj+1
         plt.xticks([0.1,0.4,0.7,1])
         plt.xlim([0.1,1])
+        plt.tight_layout()
 
 
 if __name__ == '__main__':

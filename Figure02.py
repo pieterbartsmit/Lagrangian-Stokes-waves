@@ -125,7 +125,7 @@ def plot_orbitals():
 
 
 
-            plt.title(f'{panel[ii*nheights+jj]}: $\\overline{{z}} = {height*kd:.1f}$, $\\mu = {mu:.1f}$')
+            plt.title(f'({panel[ii*nheights+jj]}) $\\overline{{z}} = {height*kd:.1f}$, $\\mu = {mu:.1f}$')
 
 
     figure.tight_layout()

@@ -5,7 +5,7 @@ Script to generate Figure 3 of the paper "Lagrangian Surface Properties in Regul
 import numpy as np
 from linearwavetheory.stokes_theory.regular_waves.mean_properties import dimensionless_variance, dimensionless_skewness, dimensionless_kurtosis
 import matplotlib.pyplot as plt
-from linearwavetheory.stokes_theory.regular_waves.mean_properties import dimensionless_stokes_drift,dimensionless_lagrangian_setup
+from linearwavetheory.stokes_theory.regular_waves.mean_properties import dimensionless_stokes_drift
 import os
 
 def plot_at_constant_steepness(ax, epsilon, color):
@@ -107,9 +107,9 @@ def plot_skewness(ax):
 
 
 def plot_kurtosis(ax):
-    plot_kurtosis_at_constant_steepness(ax, 0.05, 'b')
-    plot_kurtosis_at_constant_steepness(ax, 0.1, 'k')
-    plot_kurtosis_at_constant_steepness(ax, 0.15, 'r')
+    plot_kurtosis_at_constant_steepness(ax, 0.1, 'b')
+    plot_kurtosis_at_constant_steepness(ax, 0.2, 'k')
+    plot_kurtosis_at_constant_steepness(ax, 0.3, 'r')
     #plot_kurtosis_at_constant_steepness(ax, 0.4, 'grey')
 
     plot_kurtosis_at_constant_ursell(ax, 0.1, 'b')
@@ -168,20 +168,22 @@ def plot_variance(ax):
     plt.xlabel( 'Relative depth $kd$')
     plt.ylabel('Excess Variance [-]')
 
-
-
 if __name__ == "__main__":
     fig, ax = plt.subplots(2,2,figsize=(10, 8), dpi=600,sharex=True)
     plot_fourth_order_stokes_drift(ax[0,0])
+    plt.title('(a)')
 
     #fig, ax = plt.subplots(figsize=(8, 6), dpi=600)
     plot_variance(ax[0,1])
+    plt.title('(b)')
 
     #fig, ax = plt.subplots(figsize=(8, 6), dpi=600)
     plot_skewness(ax[1,0])
+    plt.title('(c)')
 
     #fig, ax = plt.subplots(figsize=(8, 6), dpi=600)
     plot_kurtosis(ax[1,1])
+    plt.title('(d)')
     fig.tight_layout()
     os.makedirs('./figures',exist_ok=True)
     fig.savefig('./figures/figure03.png')
